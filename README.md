@@ -4,9 +4,8 @@ Simple Android Expo based App
 
 ## Getting Started
 
-This App is created with [Expo](https://github.com/expo/expo) for time economy. Because of specifics of Expo dev mode on emulator, to test if internet connection is available, we rely on switching Wi-Fi connection only, having cellular network always alive. Otherwise, if we turn off all available network connections, we're unable to see the logs
+This App is created with [Expo](https://github.com/expo/expo) for time economy. Because of specifics of Expo dev mode on emulator, to test if internet connection is available, we rely on switching Wi-Fi connection only, having cellular network always alive. Otherwise, if we turn off all available network connections, we're unable to see the logs. Sent data in background mode is visible in console output
 
-clone repo 
 ```
 git clone https://github.com/sasha-chernova/PetcheckTest.git
 ```
