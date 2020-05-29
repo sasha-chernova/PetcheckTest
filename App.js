@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, Alert, Button, AppState } from 'react-native';
 import NetInfo from "@react-native-community/netinfo";
 import * as BackgroundFetch from 'expo-background-fetch';
 import { setDataToStore, removeDataFromStore, getDataFromStore } from './state/store';
-import { initBackgroundFetch, getData } from './helpers'
+import { initBackgroundFetch, tryCallApiBackground } from './helpers';
+import { setWalkStarting } from './services/api';
 
 const TASK_NAME = 'callWalkAPI'; // needed for running background task
 const STORE_KEY = 'beginWalk'; // key for setting data in AsyncStore
@@ -13,6 +14,9 @@ const mockData = JSON.stringify({
   "walker_id": 43307,
   "ts": "2019-12-22 19:48:00"
 });
+
+// Register task in TaskManager
+initBackgroundFetch(TASK_NAME, () => tryCallApiBackground(STORE_KEY, mockData), 2);
 
 export default function App() {
   const [appState, setAppState] = useState(AppState.currentState); // tracking AppState
@@ -25,8 +29,6 @@ export default function App() {
       const unsubscribe = NetInfo.addEventListener(async state => {
       const isConnectedToNetwork = state.isConnected && state.isInternetReachable && state.type === 'wifi';
       setIsConnectedNetworkUI(isConnectedToNetwork);
-      console.log('network state triggered')
-      setIsConnectedNetworkUI(isConnectedToNetwork);
       const storedItem = await getDataFromStore(STORE_KEY);
       if (isConnectedToNetwork && storedItem){
         tryCallApi(false);
@@ -37,20 +39,6 @@ export default function App() {
       unsubscribe(); // remove listener on unmount
     }
   }, [])
-
-  const setWalkStarting = async (body) => {
-    // fake request for success response for testing
-    return await getData('https://reactnative.dev/movies.json')
-      .then(async (json) => {
-        console.log('data is received')
-        return json;
-      })
-      .catch(async (error) => {
-        // in case of error (no internet connection in this case)
-        console.log('error', error)
-        return false;
-      })
-  };
 
   const tryCallApi = async () => {
     // we cannot rely on state 'isConnectedNetworkUI' in case of background mode, so it's better to fetch NetInfo data here
@@ -65,47 +53,22 @@ export default function App() {
       Alert.alert('Call API', 'Data is Successfully sent'); // Show notification for User
     } else {
       // No Internet connection
-      console.log('No Internet');
       await setDataToStore(STORE_KEY, mockData);
       setStore(mockData); // UI only
       Alert.alert('Call API', 'Sorry, you have no internet connection');
     }
   }
 
-  const tryCallApiBackground = async () => {
-    console.log('tryCallApiBackground called')
-    const dataIsInStore = await getDataFromStore(STORE_KEY);
-    if (!dataIsInStore) {
-      await BackgroundFetch.unregisterTaskAsync(TASK_NAME);
-      return BackgroundFetch.Result.NoData
-    }
-    const data = await NetInfo.fetch(); 
-    const isConnectedNetwork = data.isConnected && data.isInternetReachable && data.type === 'wifi';
-    if (isConnectedNetwork) {
-      try {
-        await setWalkStarting(mockData); // Sending API call
-        console.log('tryCallApiBackground success')
-        await removeDataFromStore(STORE_KEY); 
-        await BackgroundFetch.unregisterTaskAsync(TASK_NAME);
-        return BackgroundFetch.Result.NewData
-      } catch(e) {
-        return BackgroundFetch.Result.NoData
-      }
-    }
-    console.log('tryCallApiBackground error')
-    return BackgroundFetch.Result.NoData
-  }
-
   const appStateChangeHandler = async (nextAppState) => {
-    console.log('appStateChangeHandler called')
     if (appState === 'active' && nextAppState.match(/inactive|background/)) {
       // App in not active
       // init background task
       // task interval depends on platform 
-      await initBackgroundFetch(TASK_NAME, tryCallApiBackground, 2);
-      console.log('App has come to the background!');
+      const options = {
+        minimumInterval: 2
+      };
+      await BackgroundFetch.registerTaskAsync(TASK_NAME, options);
     } else {
-      console.log('App active!');
       const dataIsInStore = await getDataFromStore(STORE_KEY);
       if (dataIsInStore) {
         // if data is in AsyncStore

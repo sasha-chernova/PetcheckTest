@@ -4,15 +4,16 @@ Simple Android Expo based App
 
 ## Getting Started
 
-This App is created with [Expo](https://github.com/expo/expo) for time economy. We rely on WIFI connection to see logs
+This App is created with [Expo](https://github.com/expo/expo) for time economy. Because of specifics of Expo dev mode on emulator, to test if internet connection is available, we rely on switching Wi-Fi connection only, having cellular network always alive. Otherwise, if we turn off all available network connections, we're unable to see the logs
 
 clone repo 
+```
 git clone https://github.com/sasha-chernova/PetcheckTest.git
-
+```
 
 In real App we can use Firebase for sending notifications to User to inform that appointment is scheduled and make him click on "Start walk" button.
 
-To initiate a dalk walking, user has to click "Start walk" button. 
+To initiate a dog walking, user has to click "Start walk" button. 
 (Here, for demo purposes, we are trying to reach out some public API)
 -- If there is available internet connetion, data should be sent successfully, and user receives a notification, that dog walk has started
 -- If there is no available internet connetion, we're saving data to Async Storage and in the case if user decides to collapse and app (switch to another one, or completely close -- remove our app from memory),
