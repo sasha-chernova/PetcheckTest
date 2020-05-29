@@ -7,31 +7,33 @@ import { setWalkStarting } from './services/api';
 // initialization of backgroundFetch
 export const initBackgroundFetch = async (taskName, taskFn) => {
   try {
-    await TaskManager.unregisterTaskAsync(taskName);
-    const taskIsDefined = await TaskManager.isTaskRegisteredAsync(taskName)
-    if (!taskIsDefined) {
-      TaskManager.defineTask(taskName, taskFn);
-    } 
+      if (!TaskManager.isTaskDefined(taskName)) {
+          TaskManager.defineTask(taskName, taskFn);
+      }
+      const options = {
+          minimumInterval: 2
+      };
+      await BackgroundFetch.registerTaskAsync(taskName, options);
   } catch (err) {
-    console.log("registerTaskAsync failed: ", err);
+      console.log("registerTaskAsync failed: ", err);
   }
 }
 
 export const tryCallApiBackground = async (STORE_KEY, mockData) => {
   const dataIsInStore = await getDataFromStore(STORE_KEY);
   if (!dataIsInStore) {
-    return BackgroundFetch.Result.NoData
+      return BackgroundFetch.Result.NoData
   }
-  const data = await NetInfo.fetch(); 
+  const data = await NetInfo.fetch();
   const isConnectedNetwork = data.isConnected && data.isInternetReachable && data.type === 'wifi';
   if (isConnectedNetwork) {
-    try {
-      await setWalkStarting(mockData); // Sending API call
-      await removeDataFromStore(STORE_KEY); 
-      return BackgroundFetch.Result.NewData;
-    } catch(e) {
-      return BackgroundFetch.Result.NoData;
-    }
+      try {
+          await setWalkStarting(mockData); // Sending API call
+          await removeDataFromStore(STORE_KEY);
+          return BackgroundFetch.Result.NewData;
+      } catch (e) {
+          return BackgroundFetch.Result.NoData;
+      }
   }
   return BackgroundFetch.Result.NoData;
 }
